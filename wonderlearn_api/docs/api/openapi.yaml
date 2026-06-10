@@ -1,0 +1,604 @@
+openapi: 3.1.0
+info:
+  title: WonderLearn API
+  description: API para plataforma educativa infantil WonderLearn
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+  - url: https://api.wonderlearn.app/api/v1
+    description: Production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterDto:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: maria@example.com
+        password:
+          type: string
+          minLength: 6
+          example: password123
+        authProvider:
+          type: string
+          enum: [email, google, apple]
+          default: email
+
+    LoginDto:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshDto:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    CreateChildDto:
+      type: object
+      required: [name, age]
+      properties:
+        name:
+          type: string
+          example: Lucas
+        age:
+          type: integer
+          minimum: 2
+          maximum: 8
+          example: 5
+        avatarType:
+          type: string
+          enum: [dragon, cat, robot]
+          default: dragon
+        dailyTimeLimit:
+          type: integer
+          minimum: 15
+          maximum: 120
+          default: 30
+
+    UpdateChildDto:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+          minimum: 2
+          maximum: 8
+        avatarType:
+          type: string
+          enum: [dragon, cat, robot]
+        avatarCustomization:
+          type: string
+          description: JSON string with color and accessories
+        dailyTimeLimit:
+          type: integer
+          minimum: 15
+          maximum: 120
+
+    SubmitLessonDto:
+      type: object
+      required: [lessonId, status, score, correctAnswers, totalQuestions, timeSpentSeconds]
+      properties:
+        lessonId:
+          type: string
+        status:
+          type: string
+          enum: [started, completed, abandoned]
+        score:
+          type: integer
+          minimum: 0
+          maximum: 3
+        correctAnswers:
+          type: integer
+        totalQuestions:
+          type: integer
+        timeSpentSeconds:
+          type: integer
+        skillUpdates:
+          type: array
+          items:
+            type: object
+            properties:
+              skillName:
+                type: string
+              success:
+                type: boolean
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            authProvider:
+              type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    ChildProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        parentId:
+          type: string
+        name:
+          type: string
+        age:
+          type: integer
+        avatarType:
+          type: string
+        avatarCustomization:
+          type: string
+        levelGlobal:
+          type: integer
+        dailyTimeLimit:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+        moduleId:
+          type: string
+          enum: [wonderbooks, wondermath, wondergrow]
+        lessonType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: integer
+        durationMin:
+          type: integer
+        orderIndex:
+          type: integer
+        contentJson:
+          type: string
+        assetsJson:
+          type: string
+
+    Dashboard:
+      type: object
+      properties:
+        child:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            age:
+              type: integer
+            level:
+              type: integer
+            avatarType:
+              type: string
+        todayStats:
+          type: object
+          properties:
+            minutesUsed:
+              type: integer
+            lessonsCompleted:
+              type: integer
+            timeLimit:
+              type: integer
+            timeRemaining:
+              type: integer
+        weeklyStats:
+          type: object
+          properties:
+            thisWeekMinutes:
+              type: integer
+            prevWeekMinutes:
+              type: integer
+            changePercent:
+              type: integer
+        skills:
+          type: object
+          properties:
+            phonics:
+              type: integer
+            math:
+              type: integer
+            sel:
+              type: integer
+        recentLessons:
+          type: array
+          items:
+            type: object
+        badges:
+          type: array
+          items:
+            type: object
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new parent account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDto'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshDto'
+      responses:
+        '200':
+          description: Tokens refreshed
+        '401':
+          description: Invalid refresh token
+
+  /children:
+    post:
+      tags: [Children]
+      summary: Create a child profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChildDto'
+      responses:
+        '201':
+          description: Child profile created
+    get:
+      tags: [Children]
+      summary: Get all child profiles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of child profiles
+
+  /children/{id}:
+    get:
+      tags: [Children]
+      summary: Get child profile with progress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Child profile with progress
+    patch:
+      tags: [Children]
+      summary: Update child profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChildDto'
+      responses:
+        '200':
+          description: Updated child profile
+    delete:
+      tags: [Children]
+      summary: Delete child profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Child profile deleted
+
+  /content/lessons:
+    get:
+      tags: [Content]
+      summary: Get all available lessons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: module
+          in: query
+          schema:
+            type: string
+            enum: [wonderbooks, wondermath, wondergrow]
+        - name: difficulty
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of lessons
+
+  /content/lessons/{id}:
+    get:
+      tags: [Content]
+      summary: Get lesson details with assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lesson details
+
+  /content/phonics:
+    get:
+      tags: [Content]
+      summary: Get phonics lessons (A-Z)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Phonics lessons
+
+  /content/sight-words:
+    get:
+      tags: [Content]
+      summary: Get sight words lessons
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sight words lessons
+
+  /content/stories:
+    get:
+      tags: [Content]
+      summary: Get interactive stories
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stories list
+
+  /content/math:
+    get:
+      tags: [Content]
+      summary: Get math lessons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [counting, addition, shape, pattern]
+      responses:
+        '200':
+          description: Math lessons
+
+  /content/sel:
+    get:
+      tags: [Content]
+      summary: Get social-emotional learning lessons
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SEL lessons
+
+  /progress/events:
+    post:
+      tags: [Progress]
+      summary: Submit lesson progress event
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitLessonDto'
+      responses:
+        '201':
+          description: Progress recorded
+
+  /progress/{childId}:
+    get:
+      tags: [Progress]
+      summary: Get complete child progress
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Child progress data
+
+  /parents/dashboard/{childId}:
+    get:
+      tags: [Parents]
+      summary: Get parent dashboard for child
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dashboard data
+
+  /parents/settings/{childId}/time-limit:
+    patch:
+      tags: [Parents]
+      summary: Update child time limit
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeLimit:
+                  type: integer
+                  minimum: 15
+                  maximum: 120
+      responses:
+        '200':
+          description: Time limit updated
+
+  /parents/reports/{childId}/weekly:
+    post:
+      tags: [Parents]
+      summary: Send weekly report email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Report sent
+
+  /sync/{childId}:
+    post:
+      tags: [Sync]
+      summary: Sync offline events batch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                events:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Sync results
+
+  /sync/{childId}/pending:
+    get:
+      tags: [Sync]
+      summary: Get pending offline events
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pending events

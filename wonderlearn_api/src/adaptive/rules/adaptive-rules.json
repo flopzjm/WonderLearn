@@ -1,0 +1,31 @@
+{
+  "consecutiveSuccessToIncrease": 3,
+  "consecutiveFailureToDecrease": 3,
+  "frustrationErrorThreshold": 5,
+  "frustrationTimeWindowMs": 120000,
+  "randomTouchThreshold": 5,
+  "randomTouchTimeWindowMs": 10000,
+  "mindfulnessSuggestionMinutes": 15,
+  "difficultyLevels": {
+    "1": {
+      "name": "beginner",
+      "description": "Basic concepts with lots of visual support"
+    },
+    "2": {
+      "name": "developing",
+      "description": "Slightly more challenging with some prompts"
+    },
+    "3": {
+      "name": "intermediate",
+      "description": "Standard difficulty for grade level"
+    },
+    "4": {
+      "name": "advanced",
+      "description": "Challenge level with minimal hints"
+    },
+    "5": {
+      "name": "expert",
+      "description": "Maximum difficulty, no hints"
+    }
+  }
+}

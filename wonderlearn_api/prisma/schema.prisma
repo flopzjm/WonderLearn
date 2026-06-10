@@ -1,0 +1,180 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========== USUARIO (PADRE) ==========
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String?
+  authProvider      String    @default("email") // email | google | apple
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  emailVerified     Boolean   @default(false)
+  marketingConsent  Boolean   @default(false)
+  subscriptionTier  String    @default("free") // free | premium_family | premium_school
+
+  children          ChildProfile[]
+  refreshTokens     RefreshToken[]
+}
+
+// ========== REFRESH TOKEN ==========
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// ========== PERFIL DE NIÑO ==========
+model ChildProfile {
+  id                  String   @id @default(uuid())
+  parentId            String
+  parent              User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name                String
+  age                 Int      // 2-8
+  avatarType          String   @default("dragon") // dragon | cat | robot
+  avatarCustomization String   @default("{}") // JSON: color, accessories
+  levelGlobal         Int      @default(1) // 1-20
+  dailyTimeLimit      Int      @default(30) // minutos
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  lessonProgress      LessonProgress[]
+  skillTracking       SkillTracking[]
+  badges              ChildBadge[]
+  learningPath        LearningPath[]
+  dailyUsage          DailyUsage[]
+  offlineEvents       OfflineEvent[]
+}
+
+// ========== LECCIONES ==========
+model Lesson {
+  id          String   @id @default(uuid())
+  moduleId    String   // wonderbooks | wondermath | wondergrow
+  lessonType  String   // phonics | sight_word | story | counting | addition | shape | pattern | emotion | empathy | mindfulness
+  title       String
+  description String
+  difficulty  Int      @default(1) // 1-5
+  durationMin Int      @default(5)
+  orderIndex  Int
+  contentJson String   @default("{}") // JSON con contenido completo de la lección
+  assetsJson  String   @default("{}") // URLs de assets (audio, imágenes, rive)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  progress    LessonProgress[]
+}
+
+// ========== PROGRESO DE LECCIONES ==========
+model LessonProgress {
+  id              String    @id @default(uuid())
+  childId         String
+  child           ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  lessonId        String
+  lesson          Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  status          String    @default("started") // started | completed | abandoned
+  score           Int       @default(0) // 0-3 estrellas
+  attempts        Int       @default(0)
+  correctAnswers  Int       @default(0)
+  totalQuestions  Int       @default(0)
+  timeSpentSeconds Int      @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  deviceSyncStatus String   @default("synced") // synced | pending
+
+  @@unique([childId, lessonId])
+}
+
+// ========== TRACKING DE HABILIDADES ==========
+model SkillTracking {
+  id                    String   @id @default(uuid())
+  childId               String
+  child                 ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  skillName             String   // phonics_A | counting_1_10 | addition_simple | emotion_happy
+  masteryLevel          String   @default("novice") // novice | developing | proficient | mastered
+  consecutiveSuccesses  Int      @default(0)
+  consecutiveFailures   Int      @default(0)
+  totalAttempts         Int      @default(0)
+  lastPracticed         DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([childId, skillName])
+}
+
+// ========== INSIGNIAS ==========
+model Badge {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  title       String
+  description String
+  iconUrl     String
+  criteria    String   // JSON: condición para desbloquear
+  createdAt   DateTime @default(now())
+
+  children    ChildBadge[]
+}
+
+// ========== INSIGNIAS DE NIÑO ==========
+model ChildBadge {
+  id        String   @id @default(uuid())
+  childId   String
+  child     ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt  DateTime @default(now())
+
+  @@unique([childId, badgeId])
+}
+
+// ========== RUTA DE APRENDIZAJE ==========
+model LearningPath {
+  id              String   @id @default(uuid())
+  childId         String
+  child           ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  zoneId          String   // bosque_letras | montana_numeros | lago_emociones
+  nodeId          String
+  status          String   @default("locked") // locked | current | completed
+  starsEarned     Int      @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([childId, nodeId])
+}
+
+// ========== USO DIARIO ==========
+model DailyUsage {
+  id              String   @id @default(uuid())
+  childId         String
+  child           ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  date            DateTime @default(now())
+  totalMinutes    Int      @default(0)
+  lessonsCompleted Int     @default(0)
+  sessionCount    Int      @default(0)
+
+  @@unique([childId, date])
+}
+
+// ========== EVENTOS OFFLINE ==========
+model OfflineEvent {
+  id          String   @id @default(uuid())
+  childId     String
+  child       ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  eventType   String   // lesson_progress | skill_update | badge_earned
+  payload     String   // JSON con datos del evento
+  timestamp   DateTime @default(now())
+  syncedAt    DateTime?
+  createdAt   DateTime @default(now())
+}

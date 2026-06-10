@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.dart_tool/
+.packages
+build/
+
+# Compiled output
+dist/
+build/
+*.js.map
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+ios/Pods/
+android/.gradle/
+
+# Generated assets (large binary files)
+assets/audio/narrations/*.mp3
+assets/audio/narrations/*.wav
+assets/images/**/*.png
+assets/images/**/*.jpg
+assets/images/**/*.webp
+assets/animations/*.json
+assets/music/*.mp3
+
+# Build artifacts
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+coverage/
+
+# Prisma
+prisma/migrations/
+
+# Scripts output
+scripts/output/

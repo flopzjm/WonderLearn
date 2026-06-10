@@ -1,0 +1,99 @@
+name: wonderlearn_app
+description: WonderLearn - Plataforma educativa para niños 2-10 años
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+  
+  # Navigation
+  go_router: ^13.1.0
+  
+  # Models
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+  
+  # Audio
+  just_audio: ^0.9.36
+  audio_session: ^0.1.18
+  flutter_tts: ^3.8.3
+  
+  # Animations
+  rive: ^0.12.4
+  lottie: ^3.0.0
+  confetti_widget: ^0.7.0
+  
+  # Database (Offline)
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.0
+  
+  # Network
+  http: ^1.2.0
+  
+  # Storage
+  flutter_secure_storage: ^9.0.0
+  
+  # Charts
+  fl_chart: ^0.66.0
+  
+  # Utils
+  intl: ^0.19.0
+  uuid: ^4.2.2
+  
+  # Icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  # Code Generation
+  build_runner: ^2.4.7
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+  riverpod_generator: ^2.3.9
+  drift_dev: ^2.14.1
+  
+  # Linting
+  flutter_lints: ^3.0.1
+  
+  # Testing
+  mocktail: ^1.0.3
+  
+  # Integration Testing
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/rive/
+    - assets/audio/sfx/
+    - assets/audio/music/
+    - assets/images/letters/
+    - assets/images/numbers/
+    - assets/images/shapes/
+    - assets/images/emotions/
+    - assets/images/stories/
+    - assets/images/sight_words/
+    - assets/images/ui/
+    - assets/images/ui/icons/
+  
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-Regular.ttf
+        - asset: assets/fonts/Nunito-Bold.ttf
+          weight: 700
+    - family: ComicNeue
+      fonts:
+        - asset: assets/fonts/ComicNeue-Regular.ttf
